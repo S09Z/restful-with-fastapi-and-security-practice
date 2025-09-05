@@ -1,0 +1,66 @@
+# Git
+.git
+.gitignore
+
+# Virtual environment
+.venv
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentation and examples
+*.md
+frontend_examples.md
+database_guide.md
+ngrok-setup-guide.md
+test_summary.md
+
+# Scripts and tests
+tests/
+test/
+*test*.py
+*.sh
+update-oauth-config.py
+
+# Node modules (if any)
+node_modules/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/

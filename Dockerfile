@@ -1,20 +1,52 @@
-# Use an official Python runtime as a parent image
-FROM python:3.8-slim
+# Use Python 3.11 to match your development environment
+FROM python:3.11-slim
 
-# Set the working directory in the container
-WORKDIR /usr/src/app
+# Set working directory
+WORKDIR /app
 
-# Copy the current directory contents into the container at /usr/src/app
-COPY . .
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        build-essential \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Poetry
+RUN pip install poetry
 
-# Make port 8000 available to the world outside this container
+# Copy poetry configuration files
+COPY pyproject.toml poetry.lock ./
+
+# Configure poetry: Don't create virtual env, install dependencies
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-dev --no-interaction --no-ansi
+
+# Copy application code
+COPY app/ ./app/
+COPY prisma/ ./prisma/
+COPY docker-entrypoint.sh ./
+
+# Copy environment file (for Docker builds)
+COPY .env ./
+
+# Make entrypoint script executable
+RUN chmod +x docker-entrypoint.sh
+
+# Generate Prisma client
+RUN poetry run prisma generate
+
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Expose port
 EXPOSE 8000
 
-# Define environment variable
-ENV NAME World
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/ || exit 1
 
-# Run app.py when the container launches
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use entrypoint script
+ENTRYPOINT ["./docker-entrypoint.sh"]

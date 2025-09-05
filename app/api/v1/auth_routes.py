@@ -25,7 +25,7 @@ async def oauth_login(provider: str, request: Request):
         )
     
     state = oauth2_service.generate_state()
-    redirect_uri = f"{settings.BACKEND_URL}/api/v1/auth/{provider}/callback"
+    redirect_uri = f"{settings.effective_backend_url}/api/v1/auth/{provider}/callback"
     
     await redis_client.set(f"oauth_state:{state}", provider, ex=300)
     
@@ -34,6 +34,11 @@ async def oauth_login(provider: str, request: Request):
             auth_url = await oauth2_service.get_google_auth_url(redirect_uri, state)
         elif provider == "github":
             auth_url = await oauth2_service.get_github_auth_url(redirect_uri, state)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Unsupported OAuth provider"
+            )
         
         return RedirectResponse(auth_url)
     except ValueError as e:
@@ -59,7 +64,7 @@ async def oauth_callback(provider: str, code: str, state: str, error: Optional[s
     
     await redis_client.delete(f"oauth_state:{state}")
     
-    redirect_uri = f"{settings.BACKEND_URL}/api/v1/auth/{provider}/callback"
+    redirect_uri = f"{settings.effective_backend_url}/api/v1/auth/{provider}/callback"
     
     try:
         if provider == "google":

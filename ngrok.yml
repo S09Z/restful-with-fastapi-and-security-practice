@@ -1,0 +1,8 @@
+version: 2
+
+tunnels:
+  oauth-api:
+    proto: http
+    addr: 8000
+    # subdomain: oauth-fastapi-dev  # Optional: use a custom subdomain (requires paid plan)
+    inspect: true

@@ -6,6 +6,8 @@ from app.api.v1.auth_routes import router as auth_router
 from app.services.redis_service import redis_client
 from app.services.database_service import db_service
 from app.config import settings
+from dotenv import load_dotenv
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

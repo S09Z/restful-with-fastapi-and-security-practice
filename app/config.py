@@ -23,5 +23,13 @@ class Settings:
     # Application URLs
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
     BACKEND_URL: str = os.getenv("BACKEND_URL", "http://localhost:8000")
+    
+    # Ngrok support
+    NGROK_URL: Optional[str] = os.getenv("NGROK_URL")
+    
+    @property
+    def effective_backend_url(self) -> str:
+        """Get the effective backend URL (ngrok if available, otherwise BACKEND_URL)"""
+        return self.NGROK_URL or self.BACKEND_URL
 
 settings = Settings()

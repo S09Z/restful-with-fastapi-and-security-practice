@@ -1,13 +1,89 @@
 version: '3.8'
+
 services:
-  web:
-    build: .
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+  db:
+    image: postgres:15-alpine
+    container_name: oauth-postgres-db
+    environment:
+      POSTGRES_DB: oauth_db
+      POSTGRES_USER: oauth_user
+      POSTGRES_PASSWORD: oauth_password
+    ports:
+      - "5432:5432"
     volumes:
-      - .:/usr/src/app
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oauth_user -d oauth_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: oauth-redis-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oauth-fastapi-api
     ports:
       - "8000:8000"
     environment:
-      - NAME=World
-  redis:
-    image: "redis:alpine"
+      - DATABASE_URL=postgresql://oauth_user:oauth_password@db:5432/oauth_db
+      - REDIS_URL=redis://redis:6379/0
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - SECRET_KEY=${SECRET_KEY:-your-super-secret-key-change-this}
+      - BACKEND_URL=${BACKEND_URL:-http://localhost:8000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+    volumes:
+      - ./app:/app/app
+      - ./prisma:/app/prisma
+      - ./.env:/app/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  ngrok:
+    image: ngrok/ngrok:3-alpine
+    container_name: oauth-ngrok-proxy
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: http fastapi:8000 --log stdout
+    ports:
+      - "4040:4040"  # ngrok web interface
+    depends_on:
+      fastapi:
+        condition: service_healthy
+    profiles:
+      - ngrok  # Optional service, start with --profile ngrok
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: oauth-fastapi-network

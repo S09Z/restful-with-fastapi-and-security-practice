@@ -76,7 +76,8 @@ class OAuth2Service:
                 redirect_uri=redirect_uri
             )
             
-            resp = await self.google_client.get(userinfo_endpoint, token=token)
+            headers = {"Authorization": f"Bearer {token['access_token']}"}
+            resp = await self.google_client.get(userinfo_endpoint, headers=headers)
             user_info = resp.json()
             
             return OAuthUser(
