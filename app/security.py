@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
-import jwt
-from jwt.exceptions import ExpiredSignatureError, DecodeError, InvalidTokenError
+from jose import jwt, JWTError
 from app.config import settings
 
 SECRET_KEY = settings.SECRET_KEY
@@ -18,12 +17,6 @@ def decode_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except ExpiredSignatureError:
-        # Handle the expired token, e.g., by raising an HTTPException or returning None
-        raise ExpiredSignatureError("Token expired.")
-    except DecodeError:
-        # Handle the error in decoding the token
-        raise DecodeError("Error decoding the token.")
-    except InvalidTokenError:
-        # Handle invalid token
-        raise InvalidTokenError("Invalid token.")
+    except JWTError as e:
+        # Handle JWT errors
+        raise JWTError(f"Token error: {str(e)}")
