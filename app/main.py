@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
 from app.api.v1.user_routes import router as user_router
 from app.api.v1.auth_routes import router as auth_router
@@ -8,6 +10,8 @@ from app.services.database_service import db_service
 from app.config import settings
 from dotenv import load_dotenv
 load_dotenv()
+
+templates = Jinja2Templates(directory="templates")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,8 +39,24 @@ app.add_middleware(
 app.include_router(user_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 
-@app.get("/")
-async def read_root():
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/auth/callback", response_class=HTMLResponse)
+async def auth_callback_page(request: Request, token: str = None):
+    context = {"request": request}
+    if token:
+        context["token"] = token
+        # You could also decode the token to get user info if needed
+    return templates.TemplateResponse("callback.html", context)
+
+@app.get("/api")
+async def api_info():
     return {
         "message": "RESTful API with OAuth2/OIDC Authentication",
         "docs": "/docs",

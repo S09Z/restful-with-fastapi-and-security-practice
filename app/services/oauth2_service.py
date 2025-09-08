@@ -40,7 +40,7 @@ class OAuth2Service:
         discovery_data = discovery_resp.json()
         authorization_endpoint = discovery_data["authorization_endpoint"]
         
-        auth_url = await self.google_client.create_authorization_url(
+        auth_url, _ = self.google_client.create_authorization_url(
             authorization_endpoint,
             redirect_uri=redirect_uri,
             state=state,
@@ -53,7 +53,7 @@ class OAuth2Service:
         if not self.github_client:
             raise ValueError("GitHub OAuth2 not configured")
         
-        auth_url = await self.github_client.create_authorization_url(
+        auth_url, _ = self.github_client.create_authorization_url(
             settings.GITHUB_AUTHORIZE_URL,
             redirect_uri=redirect_uri,
             state=state

@@ -15,7 +15,7 @@ class Settings:
     GITHUB_CLIENT_SECRET: Optional[str] = os.getenv("GITHUB_CLIENT_SECRET")
     
     # OAuth2 URLs
-    GOOGLE_DISCOVERY_URL: str = "https://accounts.google.com/.well-known/openid_configuration"
+    GOOGLE_DISCOVERY_URL: str = "https://accounts.google.com/.well-known/openid-configuration"
     GITHUB_AUTHORIZE_URL: str = "https://github.com/login/oauth/authorize"
     GITHUB_TOKEN_URL: str = "https://github.com/login/oauth/access_token"
     GITHUB_USER_URL: str = "https://api.github.com/user"

@@ -56,7 +56,15 @@ async def oauth_callback(provider: str, code: str, state: str, error: Optional[s
         )
     
     stored_provider = await redis_client.get(f"oauth_state:{state}")
-    if not stored_provider or stored_provider.decode() != provider:
+    if not stored_provider:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid state parameter"
+        )
+    
+    # Handle both string and bytes from Redis
+    provider_value = stored_provider.decode() if isinstance(stored_provider, bytes) else stored_provider
+    if provider_value != provider:
         raise HTTPException(
             status_code=400,
             detail="Invalid state parameter"
@@ -97,7 +105,7 @@ async def oauth_callback(provider: str, code: str, state: str, error: Optional[s
         )
         
         response = RedirectResponse(
-            url=f"{settings.FRONTEND_URL}/auth/callback?token={access_token}"
+            url=f"{settings.effective_backend_url}/auth/callback?token={access_token}"
         )
         response.set_cookie(
             key="session_id",
@@ -147,7 +155,9 @@ async def get_session_info(request: Request):
         # Fallback to Redis
         redis_session = await redis_client.get(f"session:{session_id}")
         if redis_session:
-            session_data = json.loads(redis_session.decode())
+            # Handle both string and bytes from Redis
+            session_str = redis_session.decode() if isinstance(redis_session, bytes) else redis_session
+            session_data = json.loads(session_str)
         else:
             raise HTTPException(
                 status_code=401,
